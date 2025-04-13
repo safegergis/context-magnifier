@@ -48,8 +48,11 @@ class ScreenMagnifier(QWidget):
 
         # Start a timer to update the magnifier
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_magnifier)
-        self.timer.start(30)  # Update every 30 milliseconds
+        try:
+            self.timer.timeout.connect(self.update_magnifier)
+            self.timer.start(30)  # Update every 30 milliseconds
+        except Exception as e:
+            print(f"Error connecting timer: {e}")
 
     def update_source_dimensions(self):
         """Update source region dimensions based on scale factor"""
@@ -60,8 +63,12 @@ class ScreenMagnifier(QWidget):
         """Method for updating the window to follow cursor"""
         if not self.coord_source:
             # Get the mouse position using Qt
-            cursor_pos = QCursor.pos()
-            mx, my = cursor_pos.x(), cursor_pos.y()
+            try:
+                cursor_pos = QCursor.pos()
+                mx, my = cursor_pos.x(), cursor_pos.y()
+            except Exception as e:
+                print(f"Error getting cursor position: {e}")
+                mx, my = 0, 0
         else:
             mx, my = self.coord_source()
         # print(f"x: {mx}, y: {my}")
