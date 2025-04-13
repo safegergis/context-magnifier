@@ -4,6 +4,7 @@ from facial_recognition.main import EyeTracker
 from ocr.main import ScreenAnalyzer
 import numpy as np
 from collections import defaultdict
+import ctypes
 
 from app.zoom_window import run_zoom_window
 
@@ -114,23 +115,31 @@ def find_most_important_cells(grid_cells, importance_matrix, screen_position):
 if __name__ == "__main__":
     tracker = EyeTracker()
     screen_analyzer = ScreenAnalyzer()
-    x, y = None, None
+
+    # Create shared memory for coordinates
+    shared_x = multiprocessing.Value(ctypes.c_double, 0.0)
+    shared_y = multiprocessing.Value(ctypes.c_double, 0.0)
+
     if tracker.calibrate():
 
         def handle_gaze(coords):
             x, y = coords
+            # Update shared memory values
+            shared_x.value = float(x)
+            shared_y.value = float(y)
 
         tracking_thread = tracker.start_tracking(callback=handle_gaze, fps=4)
 
         # When done
-        tracker.stop_tracking()
+        # tracker.stop_tracking()
+
     screen_analyzer.capture_screen()
     grid_cells, cell_dimensions, importance_matrix = (
         screen_analyzer.generate_importance_grid()
     )
 
     def return_coords():
-        return (x, y)
+        return (shared_x.value, shared_y.value)
 
     p1 = multiprocessing.Process(target=run_zoom_window, args=(return_coords,))
     p2 = multiprocessing.Process(target=run_main_window)
@@ -139,3 +148,5 @@ if __name__ == "__main__":
     p2.start()
 
     p1.join()
+    # Stop tracking when processes finish
+    tracker.stop_tracking()
