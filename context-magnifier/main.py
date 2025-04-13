@@ -99,7 +99,7 @@ def update_mouse_coordinates():
     print("Stopping mouse tracking thread.")
 
 
-def get_adjusted_coordinates():
+def get_adjusted_coordinates() -> tuple[int, int]:
     """
     Returns the current coordinates, optionally adjusted based on the importance map.
     This function is passed to the zoom window.
@@ -108,7 +108,7 @@ def get_adjusted_coordinates():
     base_y = shared_y.value
 
     if not USE_IMPORTANCE_ADJUSTMENT:
-        return (base_x, base_y)
+        return (int(base_x), int(base_y))
 
     with data_lock:
         matrix = shared_importance_data["importance_matrix"]
@@ -147,8 +147,8 @@ def get_adjusted_coordinates():
                     best_cell_x, best_cell_y = check_x, check_y
 
     # Calculate the center coordinates of the most important cell
-    adjusted_x = (best_cell_x + 0.5) * cell_width
-    adjusted_y = (best_cell_y + 0.5) * cell_height
+    adjusted_x = int((best_cell_x + 0.5) * cell_width)
+    adjusted_y = int((best_cell_y + 0.5) * cell_height)
 
     # Optional: Add smoothing or inertia later if needed
     # print(f"Base: ({base_x:.0f}, {base_y:.0f}) -> Adjusted: ({adjusted_x:.0f}, {adjusted_y:.0f}) [Cell: {best_cell_x},{best_cell_y}, Score: {best_score:.2f}]") # Debug
