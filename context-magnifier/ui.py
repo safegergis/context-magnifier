@@ -116,10 +116,6 @@ class TransparentWindow(QMainWindow):
             top_widget, 
             Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
         )
-        
-        # grid_layout.addWidget(test_label)
-        # grid_layout.addWidget(test_input)
-
 
         grid_layout.addWidget(settings_container)
         grid_layout.setAlignment(
