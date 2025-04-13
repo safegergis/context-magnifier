@@ -1,10 +1,8 @@
 import sys
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSize
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QToolBar, QPushButton, QGridLayout, QWidget, QFormLayout, QSizePolicy,
-    QLabel,
-    QLineEdit,
-
+    QApplication, QMainWindow, QPushButton, QGridLayout, QWidget, 
+    QLabel, QLineEdit, QScrollArea, QVBoxLayout, QSizePolicy
 )
 from PySide6.QtSvgWidgets import QSvgWidget
 
@@ -26,6 +24,37 @@ class TransparentWindow(QMainWindow):
         bottom_widget = QSvgWidget("assets/bottom.svg")
         bottom_widget.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
+        # Scroll area
+        scroll_area = QScrollArea()
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff) 
+        scroll_area.setStyleSheet("background: transparent; border: 1px solid white;")
+
+        scroll_content = QWidget()
+        scroll_content.setLayout(QVBoxLayout())
+
+        scroll_area.setStyleSheet("""
+            QScrollArea {
+                background: transparent; 
+                border: 1px solid white;
+                min-width: 200px;
+                max-width: 200px;
+                min-height: 200px;
+                max-height: 200px;
+            }
+        """)
+
+        for i in range(20):
+            label = QLabel(f"Item {i+1}")
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setStyleSheet("color: white; font-size: 16px; padding: 10px;")
+            scroll_content.layout().addWidget(label)
+
+        scroll_area.setWidget(scroll_content)
+
+        # Force square aspect ratio
+        scroll_area.setMinimumSize(300, 300)  
+        scroll_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
         # Configuration Form
         test_label = QLabel("Test:")
         test_input = QLineEdit()
@@ -38,21 +67,20 @@ class TransparentWindow(QMainWindow):
             Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
         )
         
+        # grid_layout.addWidget(test_label)
+        # grid_layout.addWidget(test_input)
+        grid_layout.addWidget(scroll_area)
+
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(self.close)
+        grid_layout.addWidget(close_button)
+
         grid_layout.addWidget(bottom_widget)
         grid_layout.setAlignment(
             bottom_widget,
             Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter
         )
-        # grid_layout.addWidget(test_label, 1, 1)
-        # grid_layout.addWidget(test_input, 1, 2)
-
-        # Toolbar
-        toolbar = QToolBar("Main Toolbar")
-        self.addToolBar(toolbar)
-        close_button = QPushButton("Close")
-        close_button.clicked.connect(self.close)
-        toolbar.addWidget(close_button)
-
+        
         self.showFullScreen()
 
 
