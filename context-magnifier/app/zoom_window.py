@@ -5,11 +5,10 @@ from PySide6.QtWidgets import (
     QLabel,
     QWidget,
     QMenu,
-    QAction,
     QSystemTrayIcon,
 )
 from PySide6.QtCore import QTimer, Qt, Signal, QPoint, QRect
-from PySide6.QtGui import QImage, QPixmap, QIcon, QScreen, QCursor
+from PySide6.QtGui import QImage, QPixmap, QIcon, QScreen, QCursor, QAction
 
 
 class ScreenMagnifier(QWidget):
