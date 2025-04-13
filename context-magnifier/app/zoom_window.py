@@ -1,4 +1,3 @@
-import cv2
 import numpy as np
 from PySide6.QtWidgets import (
     QApplication,
@@ -129,34 +128,13 @@ class ScreenMagnifier(QWidget):
         capture_rect = QRect(magnify_x1, magnify_y1, self.source_width, self.source_height)
         pixmap = screen.grabWindow(0, magnify_x1, magnify_y1, self.source_width, self.source_height)
         
-        # Convert QPixmap to QImage
-        qImg = pixmap.toImage()
-        
-        # Convert QImage to numpy array for processing with OpenCV
-        qImg = qImg.convertToFormat(QImage.Format.Format_RGB888)
-        width = qImg.width()
-        height = qImg.height()
-        
-        # Create numpy array directly from the QImage
-        frame = np.array(list(qImg.constBits()), dtype=np.uint8).reshape(height, width, 3)
-
-        # Convert BGR to RGB (OpenCV uses BGR, but QImage expects RGB)
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        # Resize the frame using high-quality interpolation
-        magnified_frame = cv2.resize(
-            frame,
-            (self.window_width, self.window_height),
-            interpolation=cv2.INTER_LANCZOS4,
+        # Scale the pixmap to the desired size with high-quality interpolation
+        pixmap = pixmap.scaled(
+            self.window_width, 
+            self.window_height,
+            Qt.AspectRatioMode.IgnoreAspectRatio,
+            Qt.TransformationMode.SmoothTransformation
         )
-
-        # Convert the magnified frame to QImage and display it
-        height, width, channel = magnified_frame.shape
-        bytesPerLine = 3 * width
-        qImg = QImage(
-            magnified_frame.data, width, height, bytesPerLine, QImage.Format.RGB888
-        )
-        pixmap = QPixmap.fromImage(qImg)
         self.label.setPixmap(pixmap)
 
     def zoom_in(self):
