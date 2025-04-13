@@ -112,20 +112,8 @@ def find_most_important_cells(grid_cells, importance_matrix, screen_position):
 
 
 if __name__ == "__main__":
-    p1 = multiprocessing.Process(target=run_zoom_window, args=())
-    p2 = multiprocessing.Process(target=run_main_window)
-
-    p1.start()
-    p2.start()
-
-    p1.join()
     tracker = EyeTracker()
     screen_analyzer = ScreenAnalyzer()
-
-    screen_analyzer.capture_screen()
-    grid_cells, cell_dimensions, importance_matrix = (
-        screen_analyzer.generate_importance_grid()
-    )
     x, y = None, None
     if tracker.calibrate():
 
@@ -134,7 +122,20 @@ if __name__ == "__main__":
 
         tracking_thread = tracker.start_tracking(callback=handle_gaze, fps=4)
 
-        clusters = find_most_important_cells(grid_cells, importance_matrix, (x, y))
-
         # When done
         tracker.stop_tracking()
+    screen_analyzer.capture_screen()
+    grid_cells, cell_dimensions, importance_matrix = (
+        screen_analyzer.generate_importance_grid()
+    )
+
+    def return_coords():
+        return (x, y)
+
+    p1 = multiprocessing.Process(target=run_zoom_window, args=(return_coords,))
+    p2 = multiprocessing.Process(target=run_main_window)
+
+    p1.start()
+    p2.start()
+
+    p1.join()

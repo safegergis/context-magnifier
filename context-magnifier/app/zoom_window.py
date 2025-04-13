@@ -12,8 +12,9 @@ from PySide6.QtGui import QImage, QPixmap, QIcon, QScreen, QCursor, QAction
 class ScreenMagnifier(QWidget):
     exit_signal = Signal()
 
-    def __init__(self, coord_source: callable | None):
+    def __init__(self, coord_source=None):
         super().__init__()
+        self.coord_source = coord_source
         self.scale_factor = 2.5  # Default scale factor
         self.zoom_increment = 0.1  # Zoom increment for each step
 
@@ -55,11 +56,11 @@ class ScreenMagnifier(QWidget):
     def update_magnifier(self):
         """Method for updating the window to follow cursor"""
         # Get the mouse position using Qt
-        if not coords_source:
+        if not self.coord_source:
             cursor_pos = QCursor.pos()
             mx, my = cursor_pos.x(), cursor_pos.y()
         else:
-            mx, my = coords_source()
+            mx, my = self.coord_source()
         # print(f"x: {mx}, y: {my}")
 
         # Position the window with offset to avoid capturing itself
@@ -138,7 +139,7 @@ class ScreenMagnifier(QWidget):
         self.exit_signal.emit()
 
 
-def run_zoom_window(coord_source: callable):
+def run_zoom_window(coord_source=None):
     import sys
 
     app = QApplication(sys.argv)
