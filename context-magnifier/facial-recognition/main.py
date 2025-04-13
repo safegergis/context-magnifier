@@ -729,26 +729,18 @@ def get_screen_resolution():
 
 
 def demo_eye_tracker():
-    """Demo function showing how to use the EyeTracker class."""
-    # Create eye tracker instance
-    tracker = EyeTracker(calibration_samples=10)
+    tracker = EyeTracker()
+    if tracker.calibrate():
+        gaze_point = tracker.get_gaze_point()
 
-    # Run calibration
-    calibrated = tracker.calibrate()
-    if not calibrated:
-        print("Calibration failed or was cancelled.")
-        return
+        def handle_gaze(coords):
+            x, y = coords
+            print(f"Gaze at: {x}, {y}")
 
-    # Example of getting a single gaze point
-    print("Looking up a single gaze point...")
-    gaze_point = tracker.get_gaze_point()
-    if gaze_point:
-        print(f"Gaze point: {gaze_point}")
+        tracking_thread = tracker.start_tracking(callback=handle_gaze)
 
-    # Run the visual circle demo
-    tracker.run_circle_visualization()
-
-    print("Demo complete!")
+        # When done
+        tracker.stop_tracking()
 
 
 def circle_visualization_demo():
