@@ -1,10 +1,17 @@
 import sys
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QToolBar, QPushButton, QGridLayout, QWidget, QFormLayout,
+    QApplication,
+    QMainWindow,
+    QToolBar,
+    QPushButton,
+    QGridLayout,
+    QWidget,
+    QFormLayout,
     QLabel,
-    QLineEdit
+    QLineEdit,
 )
+
 
 class TransparentWindow(QMainWindow):
     def __init__(self):
@@ -18,7 +25,7 @@ class TransparentWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
         # Configuration Form
-        
+
         test_label = QLabel("Test:")
         test_input = QLineEdit()
         test_input.setPlaceholderText("Enter Value")
@@ -35,12 +42,13 @@ class TransparentWindow(QMainWindow):
 
         self.showFullScreen()
 
-
-async def run_main_window():
+def run_main_window():
     app = QApplication(sys.argv)
     window = TransparentWindow()
     window.show()
     sys.exit(app.exec())
 
+
 if __name__ == "__main__":
     run_main_window()
+

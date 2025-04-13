@@ -1,15 +1,13 @@
-import asyncio
-from app.main_window import run_main_window
-from app.zoom_window import run_zoom_window
-
-# async def main():
-#     main_win_task = asyncio.create_task(run_main_window())
-#     zoom_win_task = asyncio.create_task(run_zoom_window())
-
-#     await zoom_win_task
-#     await main_win_task
+import multiprocessing
+from app.main_window import run_main_window_sync
+from app.zoom_window import run_zoom_window_sync
 
 if __name__ == "__main__":
-    # asyncio.run(main()) 
-    asyncio.run(run_zoom_window())
-    asyncio.run(run_main_window())
+    p1 = multiprocessing.Process(target=run_zoom_window_sync)
+    p2 = multiprocessing.Process(target=run_main_window_sync)
+    
+    p1.start()
+    p2.start()
+    
+    p1.join()
+    p2.join()

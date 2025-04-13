@@ -26,7 +26,9 @@ class ScreenMagnifier(QWidget):
 
         # set window attributes
         self.setWindowFlags(
-            self.windowFlags() | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
+            self.windowFlags()
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setWindowOpacity(0.9)
@@ -66,7 +68,7 @@ class ScreenMagnifier(QWidget):
         screen_geometry = screen.geometry()
         screen_width = screen_geometry.width()
         screen_height = screen_geometry.height()
-        
+
         if window_x + self.window_width > screen_width:
             window_x = mx - self.window_width - self.x_offset
         if window_y + self.window_height > screen_height:
@@ -87,15 +89,19 @@ class ScreenMagnifier(QWidget):
 
         # Capture the screen using Qt
         screen = QApplication.primaryScreen()
-        capture_rect = QRect(magnify_x1, magnify_y1, self.source_width, self.source_height)
-        pixmap = screen.grabWindow(0, magnify_x1, magnify_y1, self.source_width, self.source_height)
-        
+        capture_rect = QRect(
+            magnify_x1, magnify_y1, self.source_width, self.source_height
+        )
+        pixmap = screen.grabWindow(
+            0, magnify_x1, magnify_y1, self.source_width, self.source_height
+        )
+
         # Scale the pixmap to the desired size with high-quality interpolation
         pixmap = pixmap.scaled(
-            self.window_width, 
+            self.window_width,
             self.window_height,
             Qt.AspectRatioMode.IgnoreAspectRatio,
-            Qt.TransformationMode.SmoothTransformation
+            Qt.TransformationMode.SmoothTransformation,
         )
         self.label.setPixmap(pixmap)
 
@@ -129,7 +135,7 @@ class ScreenMagnifier(QWidget):
         self.exit_signal.emit()
 
 
-async def run_zoom_window():
+def run_zoom_window():
     import sys
 
     app = QApplication(sys.argv)
@@ -141,5 +147,7 @@ async def run_zoom_window():
 
     sys.exit(app.exec())
 
+
 if __name__ == "__main__":
     run_zoom_window()
+
