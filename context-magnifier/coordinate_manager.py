@@ -102,6 +102,12 @@ class CoordinateManager:
         self.dummy_thread = None
         self.stop_event = None
 
+        # Continuous update thread
+        self.continuous_update = False
+        self.continuous_update_interval = 5.0  # seconds
+        self.continuous_update_thread = None
+        self.continuous_update_stop_event = threading.Event()
+
         # Initialize mouse tracking thread
         self.mouse_thread_active = True
         self.mouse_thread = threading.Thread(target=self._track_mouse)
@@ -170,11 +176,22 @@ class CoordinateManager:
         # If turning off
         elif not enabled:
             self.importance_grid_enabled = False
+            # Stop continuous update if running
+            self.stop_continuous_updates()
 
     def setup_importance_grid(self):
         """Set up the screen analyzer and generate importance grid"""
         if self.screen_analyzer is None:
             self.screen_analyzer = ScreenAnalyzer(grid_x=16, grid_y=9)
+
+        # Generate the initial importance grid
+        self.update_importance_grid()
+
+    def update_importance_grid(self):
+        """Update the importance grid by capturing the current screen and regenerating the grid"""
+        if self.screen_analyzer is None:
+            self.setup_importance_grid()
+            return
 
         print("Capturing screen for importance analysis...")
         self.screen_analyzer.capture_screen(wait_seconds=2)
@@ -182,7 +199,7 @@ class CoordinateManager:
         self.grid_cells, self.cell_dimensions, self.importance_matrix = (
             self.screen_analyzer.generate_importance_grid()
         )
-        print("Importance grid generated")
+        print("Importance grid updated")
 
     def find_important_area_near(self, x, y, radius=200, importance_threshold=0.7):
         """Find the most important point within a radius of the given coordinates,
@@ -268,6 +285,64 @@ class CoordinateManager:
 
         return x, y
 
+    def _continuous_update_loop(self):
+        """Background thread function that continuously updates the importance map"""
+        print("Starting continuous importance map updates")
+        while not self.continuous_update_stop_event.is_set():
+            try:
+                if self.importance_grid_enabled:
+                    self.update_importance_grid()
+                # Sleep for the specified interval
+                self.continuous_update_stop_event.wait(self.continuous_update_interval)
+            except Exception as e:
+                print(f"Error in continuous update thread: {e}")
+                # Sleep briefly to avoid rapid error loops
+                time.sleep(1.0)
+
+    def start_continuous_updates(self, interval=5.0):
+        """Start a background thread that continuously updates the importance map
+
+        Args:
+            interval: Time between updates in seconds
+        """
+        # Don't start if already running
+        if self.continuous_update:
+            return
+
+        self.continuous_update = True
+        self.continuous_update_interval = interval
+        self.continuous_update_stop_event.clear()
+
+        if (
+            self.continuous_update_thread is None
+            or not self.continuous_update_thread.is_alive()
+        ):
+            self.continuous_update_thread = threading.Thread(
+                target=self._continuous_update_loop
+            )
+            self.continuous_update_thread.daemon = True
+            self.continuous_update_thread.start()
+
+    def stop_continuous_updates(self):
+        """Stop the continuous update thread"""
+        if not self.continuous_update:
+            return
+
+        self.continuous_update = False
+        self.continuous_update_stop_event.set()
+
+        if self.continuous_update_thread and self.continuous_update_thread.is_alive():
+            self.continuous_update_thread.join(timeout=1.0)
+            self.continuous_update_thread = None
+
+    def set_continuous_update_interval(self, interval):
+        """Set the interval between continuous updates
+
+        Args:
+            interval: Time between updates in seconds
+        """
+        self.continuous_update_interval = max(1.0, interval)  # Minimum 1 second
+
     def cleanup(self):
         """Clean up resources"""
         self.mouse_thread_active = False
@@ -281,3 +356,6 @@ class CoordinateManager:
                 self.dummy_thread.join(timeout=1.0)
             if self.eye_tracker:
                 self.eye_tracker.stop_tracking()
+
+        # Stop continuous updates
+        self.stop_continuous_updates()

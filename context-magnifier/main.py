@@ -22,6 +22,19 @@ def run_zoom_window_app(coord_manager):
     # Connect signals for feature toggling
     magnifier.toggle_eye_tracking_signal.connect(coord_manager.toggle_eye_tracking)
     magnifier.toggle_importance_map_signal.connect(coord_manager.toggle_importance_map)
+    magnifier.update_importance_map_signal.connect(coord_manager.update_importance_grid)
+
+    # Connect continuous update signals
+    def handle_continuous_toggle(enabled):
+        if enabled:
+            coord_manager.start_continuous_updates()
+        else:
+            coord_manager.stop_continuous_updates()
+
+    magnifier.toggle_continuous_updates_signal.connect(handle_continuous_toggle)
+    magnifier.set_update_interval_signal.connect(
+        coord_manager.set_continuous_update_interval
+    )
 
     # Set initial UI state to match coordinator state
     if coord_manager.eye_tracking_enabled:

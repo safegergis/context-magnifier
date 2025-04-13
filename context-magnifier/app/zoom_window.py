@@ -14,6 +14,9 @@ class ScreenMagnifier(QWidget):
     exit_signal = Signal()
     toggle_eye_tracking_signal = Signal(bool)
     toggle_importance_map_signal = Signal(bool)
+    update_importance_map_signal = Signal()
+    toggle_continuous_updates_signal = Signal(bool)
+    set_update_interval_signal = Signal(float)
 
     def __init__(
         self,
@@ -35,6 +38,7 @@ class ScreenMagnifier(QWidget):
         # Feature toggle states
         self.eye_tracking_enabled = False
         self.importance_map_enabled = True
+        self.continuous_updates_enabled = False
 
         # Calculate source region dimensions based on the scale factor
         self.update_source_dimensions()
@@ -85,6 +89,34 @@ class ScreenMagnifier(QWidget):
         importance_map_action.triggered.connect(self.toggle_importance_map)
         menu.addAction(importance_map_action)
 
+        # Update importance map action
+        if self.importance_map_enabled:
+            update_map_action = QAction("Update Importance Map", self)
+            update_map_action.triggered.connect(self.update_importance_map)
+            menu.addAction(update_map_action)
+
+            # Continuous updates toggle
+            continuous_updates_action = QAction(
+                "Continuous Updates", self, checkable=True
+            )
+            continuous_updates_action.setChecked(self.continuous_updates_enabled)
+            continuous_updates_action.triggered.connect(self.toggle_continuous_updates)
+            menu.addAction(continuous_updates_action)
+
+            # Update interval submenu
+            interval_menu = QMenu("Update Interval", self)
+
+            # Create interval options
+            intervals = [1, 2, 5, 10, 30]
+            for interval in intervals:
+                interval_action = QAction(f"{interval} seconds", self)
+                interval_action.triggered.connect(
+                    lambda checked, i=interval: self.set_update_interval(i)
+                )
+                interval_menu.addAction(interval_action)
+
+            menu.addMenu(interval_menu)
+
         # Separator
         menu.addSeparator()
 
@@ -119,6 +151,27 @@ class ScreenMagnifier(QWidget):
         self.importance_map_enabled = checked
         self.toggle_importance_map_signal.emit(checked)
         print(f"Importance map {'enabled' if checked else 'disabled'}")
+
+        # If importance map is disabled, disable continuous updates too
+        if not checked and self.continuous_updates_enabled:
+            self.continuous_updates_enabled = False
+            self.toggle_continuous_updates_signal.emit(False)
+
+    def update_importance_map(self):
+        """Update the importance map"""
+        print("Updating importance map...")
+        self.update_importance_map_signal.emit()
+
+    def toggle_continuous_updates(self, checked):
+        """Toggle continuous updates on/off"""
+        self.continuous_updates_enabled = checked
+        self.toggle_continuous_updates_signal.emit(checked)
+        print(f"Continuous updates {'enabled' if checked else 'disabled'}")
+
+    def set_update_interval(self, interval):
+        """Set the interval between continuous updates"""
+        print(f"Setting update interval to {interval} seconds")
+        self.set_update_interval_signal.emit(float(interval))
 
     def update_source_dimensions(self):
         """Update source region dimensions based on scale factor"""
@@ -206,6 +259,16 @@ class ScreenMagnifier(QWidget):
             # zoom out (ctrl + down)
             elif event.key() == Qt.Key.Key_Down:
                 self.zoom_out()
+
+            # update importance map (ctrl + i)
+            elif event.key() == Qt.Key.Key_I:
+                if self.importance_map_enabled:
+                    self.update_importance_map()
+
+            # toggle continuous updates (ctrl + u)
+            elif event.key() == Qt.Key.Key_U:
+                if self.importance_map_enabled:
+                    self.toggle_continuous_updates(not self.continuous_updates_enabled)
 
         # hide magnifier (Esc)
         elif event.key() == Qt.Key.Key_Escape:
