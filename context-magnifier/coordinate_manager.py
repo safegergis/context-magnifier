@@ -179,10 +179,14 @@ class CoordinateManager:
             # Stop continuous update if running
             self.stop_continuous_updates()
 
-    def setup_importance_grid(self):
+    def setup_importance_grid(self, grid_x=16, grid_y=9):
         """Set up the screen analyzer and generate importance grid"""
         if self.screen_analyzer is None:
-            self.screen_analyzer = ScreenAnalyzer(grid_x=16, grid_y=9)
+            self.screen_analyzer = ScreenAnalyzer(grid_x=grid_x, grid_y=grid_y)
+        else:
+            # Update grid dimensions if they've changed
+            self.screen_analyzer.grid_x = grid_x
+            self.screen_analyzer.grid_y = grid_y
 
         # Generate the initial importance grid
         self.update_importance_grid()
