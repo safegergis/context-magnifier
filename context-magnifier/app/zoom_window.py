@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import pyautogui
 from PySide6.QtWidgets import (
     QApplication,
     QLabel,
@@ -9,8 +8,8 @@ from PySide6.QtWidgets import (
     QAction,
     QSystemTrayIcon,
 )
-from PySide6.QtCore import QTimer, Qt, Signal
-from PySide6.QtGui import QImage, QPixmap, QIcon
+from PySide6.QtCore import QTimer, Qt, Signal, QPoint, QRect
+from PySide6.QtGui import QImage, QPixmap, QIcon, QScreen, QCursor
 
 
 class ScreenMagnifier(QWidget):
@@ -94,15 +93,20 @@ class ScreenMagnifier(QWidget):
 
     def update_magnifier(self):
         """Method for updating the window to follow cursor"""
-        # Get the mouse position
-        mx, my = pyautogui.position()
+        # Get the mouse position using Qt
+        cursor_pos = QCursor.pos()
+        mx, my = cursor_pos.x(), cursor_pos.y()
 
         # Position the window with offset to avoid capturing itself
         window_x = mx + self.x_offset
         window_y = my + self.y_offset
 
         # Check if the magnifier window would go offscreen and adjust if needed
-        screen_width, screen_height = pyautogui.size()
+        screen = QApplication.primaryScreen()
+        screen_geometry = screen.geometry()
+        screen_width = screen_geometry.width()
+        screen_height = screen_geometry.height()
+        
         if window_x + self.window_width > screen_width:
             window_x = mx - self.window_width - self.x_offset
         if window_y + self.window_height > screen_height:
@@ -121,13 +125,21 @@ class ScreenMagnifier(QWidget):
         magnify_x1 = max(0, mx - half_source_width)
         magnify_y1 = max(0, my - half_source_height)
 
-        # Capture the screen
-        screen = pyautogui.screenshot(
-            region=(magnify_x1, magnify_y1, self.source_width, self.source_height)
-        )
-
-        # Convert the screenshot to a NumPy array
-        frame = np.array(screen)
+        # Capture the screen using Qt
+        screen = QApplication.primaryScreen()
+        capture_rect = QRect(magnify_x1, magnify_y1, self.source_width, self.source_height)
+        pixmap = screen.grabWindow(0, magnify_x1, magnify_y1, self.source_width, self.source_height)
+        
+        # Convert QPixmap to QImage
+        qImg = pixmap.toImage()
+        
+        # Convert QImage to numpy array for processing with OpenCV
+        qImg = qImg.convertToFormat(QImage.Format.Format_RGB888)
+        width = qImg.width()
+        height = qImg.height()
+        ptr = qImg.constBits()
+        ptr.setsize(height * width * 3)
+        frame = np.array(ptr).reshape(height, width, 3)
 
         # Convert BGR to RGB (OpenCV uses BGR, but QImage expects RGB)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
