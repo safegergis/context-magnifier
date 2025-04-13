@@ -55,6 +55,7 @@ class ScreenMagnifier(QWidget):
         # Get the mouse position using Qt
         cursor_pos = QCursor.pos()
         mx, my = cursor_pos.x(), cursor_pos.y()
+        # print(f"x: {mx}, y: {my}")
 
         # Position the window with offset to avoid capturing itself
         window_x = mx + self.x_offset
@@ -128,7 +129,7 @@ class ScreenMagnifier(QWidget):
         self.exit_signal.emit()
 
 
-if __name__ == "__main__":
+async def run_zoom_window():
     import sys
 
     app = QApplication(sys.argv)
@@ -139,3 +140,6 @@ if __name__ == "__main__":
     magnifier.exit_signal.connect(app.quit)
 
     sys.exit(app.exec())
+
+if __name__ == "__main__":
+    run_zoom_window()

@@ -36,7 +36,7 @@ class TransparentWindow(QMainWindow):
         self.showFullScreen()
 
 
-def run_main_window():
+async def run_main_window():
     app = QApplication(sys.argv)
     window = TransparentWindow()
     window.show()
