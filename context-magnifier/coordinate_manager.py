@@ -2,70 +2,12 @@ import multiprocessing
 import ctypes
 import threading
 import time
-import math
-import tkinter as tk  # For getting screen dimensions
 import numpy as np
 from PySide6.QtGui import QCursor
 import json
 import os
-
 from facial_recognition.main import EyeTracker
 from ocr.main import ScreenAnalyzer
-
-
-def create_dummy_eye_tracker(shared_x, shared_y, fps=20):
-    """
-    Creates a dummy thread that simulates eye movements for testing.
-    Generates a figure-8 pattern across the screen.
-
-    Args:
-        shared_x: multiprocessing.Value for x coordinate
-        shared_y: multiprocessing.Value for y coordinate
-        fps: Updates per second
-    """
-    # Get screen dimensions
-    root = tk.Tk()
-    root.withdraw()
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
-    root.destroy()
-
-    # Center of screen
-    center_x = screen_width // 2
-    center_y = screen_height // 2
-
-    # Pattern size - 1/3 of screen dimensions
-    width_amplitude = screen_width // 3
-    height_amplitude = screen_height // 3
-
-    stop_event = threading.Event()
-
-    def dummy_eye_movement():
-        step = 0
-        while not stop_event.is_set():
-            # Calculate time-based position (figure-8 pattern)
-            t = step / 50.0  # Adjust for speed
-
-            # Figure-8 parametric equations
-            x = center_x + width_amplitude * math.sin(t)
-            y = center_y + height_amplitude * math.sin(2 * t) / 2
-
-            # Update shared memory
-            shared_x.value = x
-            shared_y.value = y
-
-            # Print for debugging
-            if step % 20 == 0:
-                print(f"Dummy eye position: ({int(x)}, {int(y)})")
-
-            step += 1
-            time.sleep(1.0 / fps)
-
-    thread = threading.Thread(target=dummy_eye_movement)
-    thread.daemon = True
-    thread.start()
-
-    return stop_event, thread
 
 
 class CoordinateManager:
@@ -78,11 +20,9 @@ class CoordinateManager:
         self,
         eye_tracking_enabled=False,
         importance_grid_enabled=False,
-        use_dummy_tracker=False,
     ):
         self.eye_tracking_enabled = eye_tracking_enabled
         self.importance_grid_enabled = importance_grid_enabled
-        self.use_dummy_tracker = use_dummy_tracker
 
         # Initialize shared memory for eye tracker coordinates
         self.shared_eye_x = multiprocessing.Value(ctypes.c_double, 0.0)
@@ -193,28 +133,22 @@ class CoordinateManager:
             return self.load_calibration_and_track(self.calibration_file)
 
         # Otherwise use dummy or do live calibration
-        if self.use_dummy_tracker:
-            print("Using dummy eye tracker for debugging")
-            self.stop_event, self.dummy_thread = create_dummy_eye_tracker(
-                self.shared_eye_x, self.shared_eye_y
+        self.eye_tracker = EyeTracker()
+        if self.eye_tracker.calibrate():
+
+            def handle_gaze(coords):
+                x, y = coords
+                # Update shared memory values
+                self.shared_eye_x.value = float(x)
+                self.shared_eye_y.value = float(y)
+
+            self.tracking_thread = self.eye_tracker.start_tracking(
+                callback=handle_gaze, fps=4
             )
+            print("Eye tracking started successfully")
         else:
-            self.eye_tracker = EyeTracker()
-            if self.eye_tracker.calibrate():
-
-                def handle_gaze(coords):
-                    x, y = coords
-                    # Update shared memory values
-                    self.shared_eye_x.value = float(x)
-                    self.shared_eye_y.value = float(y)
-
-                self.tracking_thread = self.eye_tracker.start_tracking(
-                    callback=handle_gaze, fps=4
-                )
-                print("Eye tracking started successfully")
-            else:
-                print("Eye tracking calibration failed")
-                self.eye_tracking_enabled = False
+            print("Eye tracking calibration failed")
+            self.eye_tracking_enabled = False
 
     def toggle_eye_tracking(self, enabled):
         """Toggle eye tracking on/off"""

@@ -26,12 +26,14 @@ class ScreenMagnifier(QWidget):
         window_width: int = 600,
         window_height: int = 400,
         follow_mouse: bool = False,
+        fixed_position: bool = False,
     ):
         super().__init__()
         self.coord_source = coord_source
         self.scale_factor = scale_factor  # Default scale factor
         self.zoom_increment = zoom_increment  # Zoom increment for each step
         self.follow_mouse = follow_mouse  # Whether to position window at mouse cursor
+        self.fixed_position = fixed_position  # Whether to fix position at bottom right
 
         # Set fixed dimensions for magnifier window
         self.window_width = window_width
@@ -52,7 +54,7 @@ class ScreenMagnifier(QWidget):
             | Qt.WindowType.WindowStaysOnTopHint
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setWindowOpacity(0.9)
+        self.setWindowOpacity(1.0)
         self.setFixedSize(self.window_width, self.window_height)
 
         # Create a label to display the magnified region
@@ -90,6 +92,12 @@ class ScreenMagnifier(QWidget):
         importance_map_action.setChecked(self.importance_map_enabled)
         importance_map_action.triggered.connect(self.toggle_importance_map)
         menu.addAction(importance_map_action)
+
+        # Fixed position toggle
+        fixed_position_action = QAction("Fixed Position", self, checkable=True)
+        fixed_position_action.setChecked(self.fixed_position)
+        fixed_position_action.triggered.connect(self.toggle_fixed_position)
+        menu.addAction(fixed_position_action)
 
         # Update importance map action
         if self.importance_map_enabled:
@@ -210,7 +218,17 @@ class ScreenMagnifier(QWidget):
             content_x, content_y = self.coord_source()
 
         # Determine window position
-        if self.follow_mouse:
+        if self.fixed_position:
+            # Get screen dimensions for fixed positioning
+            screen = QApplication.primaryScreen()
+            screen_geometry = screen.geometry()
+            screen_width = screen_geometry.width()
+            screen_height = screen_geometry.height()
+
+            # Position in bottom right with a small margin
+            window_x = screen_width - self.window_width - 20
+            window_y = screen_height - self.window_height - 20
+        elif self.follow_mouse:
             window_x = mouse_x
             window_y = mouse_y
         else:
@@ -276,6 +294,14 @@ class ScreenMagnifier(QWidget):
         self.scale_factor = max(1.1, self.scale_factor - self.zoom_increment)
         self.update_source_dimensions()
 
+    def toggle_fixed_position(self, checked):
+        """Toggle whether window stays in fixed position"""
+        self.fixed_position = checked
+        # If fixed position is enabled, disable follow mouse
+        if checked and self.follow_mouse:
+            self.follow_mouse = False
+        print(f"Fixed position {'enabled' if checked else 'disabled'}")
+
     def keyPressEvent(self, event):
         """Handles key events for the app"""
         # Ctrl + ...
@@ -302,6 +328,10 @@ class ScreenMagnifier(QWidget):
             elif event.key() == Qt.Key.Key_F:
                 self.toggle_follow_mouse(not self.follow_mouse)
 
+            # toggle fixed position (ctrl + p)
+            elif event.key() == Qt.Key.Key_P:
+                self.toggle_fixed_position(not self.fixed_position)
+
         # hide magnifier (Esc)
         elif event.key() == Qt.Key.Key_Escape:
             self.hide()
@@ -317,6 +347,7 @@ def run_zoom_window(
     window_width: int = 600,
     window_height: int = 400,
     follow_mouse: bool = False,
+    fixed_position: bool = False,
 ):
     import sys
 
@@ -328,6 +359,7 @@ def run_zoom_window(
         window_width,
         window_height,
         follow_mouse,
+        fixed_position,
     )
     magnifier.show()
 

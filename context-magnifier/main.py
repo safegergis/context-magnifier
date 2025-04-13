@@ -86,6 +86,15 @@ def process_command(command, coord_manager):
             if calibration_file:
                 # Load calibration and enable eye tracking
                 return coord_manager.load_calibration_and_track(calibration_file)
+        elif command.get("command") == "toggle_continuous_updates":
+            # Toggle continuous updates
+            if coord_manager.continuous_update:
+                coord_manager.stop_continuous_updates()
+                print("Stopped continuous updates")
+            else:
+                coord_manager.start_continuous_updates()
+                print("Started continuous updates")
+            return True
 
         return False
     except Exception as e:
@@ -97,6 +106,9 @@ def run_zoom_window_app(coord_manager, settings_queue, command_queue):
     """Run the zoom window application with the given coordinate manager"""
     app = QApplication(sys.argv)
 
+    # Check for fixed position setting (default to False if not set)
+    fixed_position = getattr(coord_manager, "fixed_position", False)
+
     magnifier = ScreenMagnifier(
         coord_source=coord_manager.get_coordinates,
         scale_factor=2.5,
@@ -104,6 +116,7 @@ def run_zoom_window_app(coord_manager, settings_queue, command_queue):
         window_width=1000,
         window_height=562,
         follow_mouse=True,  # Enable follow_mouse by default
+        fixed_position=fixed_position,  # Apply fixed position setting
     )
 
     # Connect signals for feature toggling
@@ -175,7 +188,6 @@ def run_zoom_window_app(coord_manager, settings_queue, command_queue):
 
 if __name__ == "__main__":
     # Configuration options
-    USE_DUMMY_TRACKER = False  # Set to True to use dummy eye tracking
     USE_EYE_TRACKING = False  # Set to True to enable eye tracking
     USE_IMPORTANCE_MAP = True  # Set to True to use importance map for zoom targeting
 
@@ -187,7 +199,6 @@ if __name__ == "__main__":
     coord_manager = CoordinateManager(
         eye_tracking_enabled=USE_EYE_TRACKING,
         importance_grid_enabled=USE_IMPORTANCE_MAP,
-        use_dummy_tracker=USE_DUMMY_TRACKER,
     )
 
     # Set up components

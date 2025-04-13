@@ -248,9 +248,25 @@ class TransparentWindow(QMainWindow):
         # Eye Tracking Button
         eye_tracking_button = QPushButton("eye tracking")
         eye_tracking_button.clicked.connect(self.enable_eye_tracking)
-        eye_tracking_button.setFixedSize(140, 40)
+        eye_tracking_button.setFixedSize(150, 40)
         eye_tracking_button.setFont(custom_font)
         eye_tracking_button.setStyleSheet("""
+            QPushButton {
+                background-color: #0CBAFF;
+                color: black;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #0A9AE0;
+            }
+        """)
+
+        # Continuous Updates Button
+        continuous_updates_button = QPushButton("continuous updates")
+        continuous_updates_button.clicked.connect(self.toggle_continuous_updates)
+        continuous_updates_button.setFixedSize(200, 40)
+        continuous_updates_button.setFont(custom_font)
+        continuous_updates_button.setStyleSheet("""
             QPushButton {
                 background-color: #0CBAFF;
                 color: black;
@@ -278,8 +294,10 @@ class TransparentWindow(QMainWindow):
             }
         """)
 
+        # Add buttons to layout
         button_layout.addWidget(apply_button)
         button_layout.addWidget(eye_tracking_button)
+        button_layout.addWidget(continuous_updates_button)
         button_layout.addWidget(close_button)
 
         grid_layout.addWidget(button_container)
@@ -341,46 +359,50 @@ class TransparentWindow(QMainWindow):
             print(f"Error applying settings: {e}")
 
     def enable_eye_tracking(self):
-        """Load calibration file and enable eye tracking"""
+        """Enable eye tracking with calibration file"""
         try:
-            # Show file dialog to select calibration file
-            calibration_file, _ = QFileDialog.getOpenFileName(
-                self,
-                "Select Eye Calibration File",
-                "",
-                "JSON Files (*.json)",
+            # Open file dialog to select calibration file
+            file_dialog = QFileDialog()
+            file_dialog.setFileMode(QFileDialog.FileMode.ExistingFile)
+            file_dialog.setNameFilter("Calibration files (*.json)")
+            if file_dialog.exec():
+                selected_files = file_dialog.selectedFiles()
+                if selected_files:
+                    calibration_file = selected_files[0]
+                    # Send command to enable eye tracking with calibration file
+                    if self.command_queue:
+                        self.command_queue.put(
+                            {
+                                "command": "enable_eye_tracking",
+                                "file": calibration_file,
+                            }
+                        )
+        except Exception as e:
+            print(f"Error enabling eye tracking: {e}")
+            QMessageBox.critical(
+                self, "Error", f"Failed to enable eye tracking: {str(e)}"
             )
 
-            if not calibration_file:
-                return  # User canceled
-
-            # Check if file exists
-            if not os.path.exists(calibration_file):
-                QMessageBox.warning(
-                    self,
-                    "Warning",
-                    f"Calibration file not found: {calibration_file}",
-                )
-                return
-
-            # Send command to enable eye tracking with the calibration file
+    def toggle_continuous_updates(self):
+        """Toggle continuous updates for the importance map"""
+        try:
+            # Send command to toggle continuous updates
             if self.command_queue:
                 self.command_queue.put(
-                    {"command": "enable_eye_tracking", "file": calibration_file}
+                    {
+                        "command": "toggle_continuous_updates",
+                    }
                 )
-
-            # Emit signal for local connections
-            self.enable_eye_tracking_signal.emit(calibration_file)
-
-            QMessageBox.information(
-                self,
-                "Eye Tracking Enabled",
-                f"Eye tracking enabled with calibration from: {os.path.basename(calibration_file)}",
-            )
-
+                QMessageBox.information(
+                    self,
+                    "Continuous Updates",
+                    "Toggled continuous importance map updates",
+                )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to enable eye tracking: {e}")
-            print(f"Error enabling eye tracking: {e}")
+            print(f"Error toggling continuous updates: {e}")
+            QMessageBox.critical(
+                self, "Error", f"Failed to toggle continuous updates: {str(e)}"
+            )
 
 
 def run_main_window(settings_queue=None, command_queue=None):
