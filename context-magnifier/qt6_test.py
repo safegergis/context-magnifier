@@ -38,7 +38,7 @@ class MagnifierWidget(QWidget):
         self.showFullScreen()
 
     def paintEvent(self, event):
-        super().painEvent(event)
+        super().paintEvent(event)
 
         if not self.magnifier_active:
             return
