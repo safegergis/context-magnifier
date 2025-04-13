@@ -12,7 +12,7 @@ from PySide6.QtGui import QImage, QPixmap, QIcon, QScreen, QCursor, QAction
 class ScreenMagnifier(QWidget):
     exit_signal = Signal()
 
-    def __init__(self):
+    def __init__(self, coord_source: callable | None):
         super().__init__()
         self.scale_factor = 2.5  # Default scale factor
         self.zoom_increment = 0.1  # Zoom increment for each step
@@ -26,7 +26,9 @@ class ScreenMagnifier(QWidget):
 
         # set window attributes
         self.setWindowFlags(
-            self.windowFlags() | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
+            self.windowFlags()
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint
         )
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setWindowOpacity(0.9)
@@ -53,8 +55,12 @@ class ScreenMagnifier(QWidget):
     def update_magnifier(self):
         """Method for updating the window to follow cursor"""
         # Get the mouse position using Qt
-        cursor_pos = QCursor.pos()
-        mx, my = cursor_pos.x(), cursor_pos.y()
+        if not coords_source:
+            cursor_pos = QCursor.pos()
+            mx, my = cursor_pos.x(), cursor_pos.y()
+        else:
+            mx, my = coords_source()
+        # print(f"x: {mx}, y: {my}")
 
         # Position the window with offset to avoid capturing itself
         window_x = mx + self.x_offset
@@ -65,7 +71,7 @@ class ScreenMagnifier(QWidget):
         screen_geometry = screen.geometry()
         screen_width = screen_geometry.width()
         screen_height = screen_geometry.height()
-        
+
         if window_x + self.window_width > screen_width:
             window_x = mx - self.window_width - self.x_offset
         if window_y + self.window_height > screen_height:
@@ -86,15 +92,19 @@ class ScreenMagnifier(QWidget):
 
         # Capture the screen using Qt
         screen = QApplication.primaryScreen()
-        capture_rect = QRect(magnify_x1, magnify_y1, self.source_width, self.source_height)
-        pixmap = screen.grabWindow(0, magnify_x1, magnify_y1, self.source_width, self.source_height)
-        
+        capture_rect = QRect(
+            magnify_x1, magnify_y1, self.source_width, self.source_height
+        )
+        pixmap = screen.grabWindow(
+            0, magnify_x1, magnify_y1, self.source_width, self.source_height
+        )
+
         # Scale the pixmap to the desired size with high-quality interpolation
         pixmap = pixmap.scaled(
-            self.window_width, 
+            self.window_width,
             self.window_height,
             Qt.AspectRatioMode.IgnoreAspectRatio,
-            Qt.TransformationMode.SmoothTransformation
+            Qt.TransformationMode.SmoothTransformation,
         )
         self.label.setPixmap(pixmap)
 
@@ -128,14 +138,18 @@ class ScreenMagnifier(QWidget):
         self.exit_signal.emit()
 
 
-if __name__ == "__main__":
+def run_zoom_window(coord_source: callable):
     import sys
 
     app = QApplication(sys.argv)
-    magnifier = ScreenMagnifier()
+    magnifier = ScreenMagnifier(coord_source)
     magnifier.show()
 
     # Connect the exit signal to the QApplication quit method
     magnifier.exit_signal.connect(app.quit)
 
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    run_zoom_window()

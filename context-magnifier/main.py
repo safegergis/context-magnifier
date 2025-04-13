@@ -1,8 +1,11 @@
+import multiprocessing
 from app.main_window import run_main_window
 from facial_recognition.main import EyeTracker
 from ocr.main import ScreenAnalyzer
 import numpy as np
 from collections import defaultdict
+
+from app.zoom_window import run_zoom_window
 
 
 def find_most_important_cells(grid_cells, importance_matrix, screen_position):
@@ -109,6 +112,13 @@ def find_most_important_cells(grid_cells, importance_matrix, screen_position):
 
 
 if __name__ == "__main__":
+    p1 = multiprocessing.Process(target=run_zoom_window, args=())
+    p2 = multiprocessing.Process(target=run_main_window)
+
+    p1.start()
+    p2.start()
+
+    p1.join()
     tracker = EyeTracker()
     screen_analyzer = ScreenAnalyzer()
 
