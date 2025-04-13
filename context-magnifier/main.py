@@ -1,12 +1,11 @@
 import multiprocessing
 from app.main_window import run_main_window
 import sys
-from PySide6.QtWidgets import QApplication, QSizePolicy
+from PySide6.QtWidgets import QApplication
 
 
 from app.zoom_window import ScreenMagnifier
 from coordinate_manager import CoordinateManager
-from ocr.main import ScreenAnalyzer
 
 
 def apply_settings(settings, coord_manager):

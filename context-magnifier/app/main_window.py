@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtGui import QFontDatabase, QFont
-import multiprocessing
 
 
 class TransparentWindow(QMainWindow):
