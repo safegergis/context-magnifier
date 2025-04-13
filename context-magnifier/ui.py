@@ -1,4 +1,5 @@
 import sys
+import os
 from PySide6.QtCore import Qt, QSize
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QPushButton, QGridLayout, QWidget, QHBoxLayout,
@@ -15,12 +16,12 @@ class TransparentWindow(QMainWindow):
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
-        font_id = QFontDatabase.addApplicationFont("fonts/KdamThmorPro-Regular.ttf")  
+        font_path = os.path.join(os.path.dirname(__file__), "fonts", "KdamThmorPro-Regular.ttf")
+        font_id = QFontDatabase.addApplicationFont(font_path)  
 
         if font_id == -1:
             print("Failed to load font!")
         else:
-            # Get the font family name
             font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
 
         custom_font = QFont(font_family, 20)
@@ -40,16 +41,31 @@ class TransparentWindow(QMainWindow):
         settings_title = QSvgWidget("assets/settings.svg")
         settings_title.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
+        leo_widget = QSvgWidget("assets/leo.svg")
+        leo_widget.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
+        virgo_widget = QSvgWidget("assets/virgo.svg")
+        virgo_widget.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
+        cancer_widget = QSvgWidget("assets/cancer.svg")
+        cancer_widget.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        
+
+        design_widget = QSvgWidget("assets/design.svg")
+        design_widget.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
         # Scroll area
         scroll_area = QScrollArea()
         scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff) 
         
         scroll_content = QWidget()
         scroll_content.setLayout(QVBoxLayout())
+        scroll_content.setAttribute(Qt.WA_TranslucentBackground)
+        scroll_content.setStyleSheet("background: transparent;")
 
         scroll_area.setStyleSheet("""
             QScrollArea {
-                background: rgba(255, 255, 255, 0.10); 
+                background: rgba(255, 255, 255, 0.12); 
                 border: 2.5px solid #0CBAFF;
                 min-width: 597px;
                 max-width: 597px;
@@ -57,12 +73,33 @@ class TransparentWindow(QMainWindow):
                 max-height: 399px;
             }
         """)
-
+        
+        #Settings container
         settings_container = QWidget()
         settings_layout = QVBoxLayout()
         settings_container.setLayout(settings_layout)
         settings_layout.addWidget(settings_title)
         settings_layout.addWidget(scroll_area)
+
+        #First Design Stack container
+        stack1_container = QWidget()
+        stack1_layout = QVBoxLayout()
+        stack1_container.setLayout(stack1_layout)
+        stack1_layout.addWidget(leo_widget)
+        stack1_layout.addWidget(virgo_widget)
+
+        #Middle container
+        middle_container = QWidget()
+        middle_layout = QHBoxLayout()
+        middle_container.setLayout(middle_layout)
+        middle_layout.addWidget(stack1_container)
+        middle_layout.addWidget(design_widget)        
+        middle_layout.addWidget(settings_container)
+        middle_layout.addWidget(cancer_widget)
+        middle_layout.setAlignment(
+            cancer_widget,
+            Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight
+        )        
 
         def SettingWidget(label):
             label = QLabel(label)
@@ -80,9 +117,18 @@ class TransparentWindow(QMainWindow):
             )
             input = QLineEdit()
 
+            input.setStyleSheet("""
+                QLineEdit {
+                    border: 2px solid #0CBAFF;  /* Blue border matching your theme */
+                }
+            """)
+
+            input.setFixedSize(200, 30)
+
             label_widget = QWidget()
+            label_widget.setAttribute(Qt.WA_TranslucentBackground) 
+            label_widget.setStyleSheet("background: transparent;")
             label_layout = QHBoxLayout(label_widget)
-            
 
             label_layout.addWidget(label)
             label_layout.addWidget(input, stretch=1)
@@ -117,9 +163,9 @@ class TransparentWindow(QMainWindow):
             Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter
         )
 
-        grid_layout.addWidget(settings_container)
+        grid_layout.addWidget(middle_container)
         grid_layout.setAlignment(
-            settings_container,
+            middle_container,
             Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignHCenter
         )
 
