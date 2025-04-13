@@ -31,6 +31,13 @@ class ScreenAnalyzer:
         Args:
             grid_x: Number of horizontal grid cells
             grid_y: Number of vertical grid cells
+            base_size: Base font size for text importance calculation
+            max_size_factor: max factor to multiply the text importance by for small text
+            min_size_factor: min factor to multiply the text importance by for large text
+            confidence_threshold: Minimum confidence threshold for text, text with lower confidence is ignored
+            button_importance: Importance score for buttons
+            input_field_importance: Importance score for input fields
+            checkbox_importance: Importance score for checkboxes
         """
         self.grid_x = grid_x
         self.grid_y = grid_y
