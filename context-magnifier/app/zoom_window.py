@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import pyautogui
-from PyQt5.QtWidgets import (
+from PySide6.QtWidgets import (
     QApplication,
     QLabel,
     QWidget,
@@ -9,12 +9,12 @@ from PyQt5.QtWidgets import (
     QAction,
     QSystemTrayIcon,
 )
-from PyQt5.QtCore import QTimer, Qt, pyqtSignal
-from PyQt5.QtGui import QImage, QPixmap, QIcon
+from PySide6.QtCore import QTimer, Qt, Signal
+from PySide6.QtGui import QImage, QPixmap, QIcon
 
 
 class ScreenMagnifier(QWidget):
-    exit_signal = pyqtSignal()
+    exit_signal = Signal()
 
     def __init__(self):
         super().__init__()
@@ -30,9 +30,9 @@ class ScreenMagnifier(QWidget):
 
         # set window attributes
         self.setWindowFlags(
-            self.windowFlags() | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
+            self.windowFlags() | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint
         )
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setWindowOpacity(0.9)
         self.setFixedSize(self.window_width, self.window_height)
 
@@ -143,7 +143,7 @@ class ScreenMagnifier(QWidget):
         height, width, channel = magnified_frame.shape
         bytesPerLine = 3 * width
         qImg = QImage(
-            magnified_frame.data, width, height, bytesPerLine, QImage.Format_RGB888
+            magnified_frame.data, width, height, bytesPerLine, QImage.Format.RGB888
         )
         pixmap = QPixmap.fromImage(qImg)
         self.label.setPixmap(pixmap)
@@ -161,17 +161,17 @@ class ScreenMagnifier(QWidget):
     def keyPressEvent(self, event):
         """Handles key events for the app"""
         # Ctrl + ...
-        if event.modifiers() == Qt.ControlModifier:
+        if event.modifiers() == Qt.KeyboardModifier.ControlModifier:
             # zoom in (ctrl + up)
-            if event.key() == Qt.Key_Up:
+            if event.key() == Qt.Key.Key_Up:
                 self.zoom_in()
 
             # zoom out (ctrl + down)
-            elif event.key() == Qt.Key_Down:
+            elif event.key() == Qt.Key.Key_Down:
                 self.zoom_out()
 
         # hide magnifier (Esc)
-        elif event.key() == Qt.Key_Escape:
+        elif event.key() == Qt.Key.Key_Escape:
             self.hide()
 
     def closeEvent(self, event):
@@ -188,4 +188,4 @@ if __name__ == "__main__":
     # Connect the exit signal to the QApplication quit method
     magnifier.exit_signal.connect(app.quit)
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
