@@ -74,18 +74,33 @@ class ScreenAnalyzer:
 
         Args:
             wait_seconds: Number of seconds to wait before capturing
+
+        Returns:
+            screenshot: numpy array of the screenshot or None if failed
         """
         if wait_seconds > 0:
             time.sleep(wait_seconds)
 
-        # Take a screenshot
-        self.screenshot = np.array(ImageGrab.grab())
+        try:
+            # Take a screenshot
+            screenshot = ImageGrab.grab()
 
-        # Convert from BGR to RGB (OpenCV uses BGR by default)
-        self.screenshot = cv2.cvtColor(self.screenshot, cv2.COLOR_BGR2RGB)
+            # Check if screenshot is valid
+            if screenshot is None or screenshot.size == (0, 0):
+                print("Error: Failed to capture screen - empty screenshot")
+                return None
 
-        print(f"Screenshot captured with shape: {self.screenshot.shape}")
-        return self.screenshot
+            self.screenshot = np.array(screenshot)
+
+            # Convert from BGR to RGB (OpenCV uses BGR by default)
+            self.screenshot = cv2.cvtColor(self.screenshot, cv2.COLOR_BGR2RGB)
+
+            print(f"Screenshot captured with shape: {self.screenshot.shape}")
+            return self.screenshot
+
+        except Exception as e:
+            print(f"Error capturing screenshot: {e}")
+            return None
 
     def create_grid(self):
         """
@@ -341,39 +356,94 @@ class ScreenAnalyzer:
             cell_dimensions: Tuple of (cell_width, cell_height)
             importance_matrix: 2D numpy array of importance scores
         """
-        if self.screenshot is None:
-            raise ValueError("No screenshot available. Call capture_screen() first.")
+        try:
+            if self.screenshot is None:
+                print("No screenshot available. Attempting to capture screen now.")
+                self.capture_screen(wait_seconds=1)
 
-        # Create the grid
-        start_time = timeit.default_timer()
-        self.grid_cells, self.cell_dimensions = self.create_grid()
+                # If still no screenshot, return a default grid
+                if self.screenshot is None:
+                    raise ValueError("Failed to capture screen after retry")
 
-        # Create a 2D matrix to store importance scores
-        self.importance_matrix = np.zeros((self.grid_y, self.grid_x), dtype=np.float32)
+            # Verify screenshot is valid
+            if len(self.screenshot.shape) != 3 or any(
+                dim == 0 for dim in self.screenshot.shape
+            ):
+                raise ValueError(f"Invalid screenshot shape: {self.screenshot.shape}")
 
-        # Calculate importance for each cell
-        for cell_info in self.grid_cells:
-            x, y = cell_info["position"]
+            # Create the grid
+            start_time = timeit.default_timer()
+            self.grid_cells, self.cell_dimensions = self.create_grid()
 
-            # Calculate importance score
-            ui_importance, ui_elements = self.detect_ui_elements(cell_info["cell"])
-            text_importance = self.analyze_text_importance(cell_info["cell"])
-            total_importance = ui_importance + text_importance
+            # Create a 2D matrix to store importance scores
+            self.importance_matrix = np.zeros(
+                (self.grid_y, self.grid_x), dtype=np.float32
+            )
 
-            # Store the importance score in the cell info
-            cell_info["importance"] = total_importance
-            cell_info["ui_elements"] = ui_elements
-            cell_info["text_importance"] = text_importance
+            # Calculate importance for each cell
+            for cell_info in self.grid_cells:
+                x, y = cell_info["position"]
 
-            # Add to the importance matrix
-            self.importance_matrix[y, x] = total_importance
+                # Verify cell image is valid
+                cell_image = cell_info["cell"]
+                if cell_image is None or cell_image.size == 0:
+                    print(f"Warning: Invalid cell image at position ({x}, {y})")
+                    continue
 
-        end_time = timeit.default_timer()
-        print(
-            f"Time taken to generate importance grid: {end_time - start_time:.2f} seconds"
-        )
+                # Calculate importance score
+                try:
+                    ui_importance, ui_elements = self.detect_ui_elements(cell_image)
+                    text_importance = self.analyze_text_importance(cell_image)
+                    total_importance = ui_importance + text_importance
+                except Exception as cell_error:
+                    print(f"Error analyzing cell ({x}, {y}): {cell_error}")
+                    # Use default importance for this cell
+                    ui_importance, ui_elements = 0, []
+                    text_importance = 0
+                    total_importance = 0
 
-        return self.grid_cells, self.cell_dimensions, self.importance_matrix
+                # Store the importance score in the cell info
+                cell_info["importance"] = total_importance
+                cell_info["ui_elements"] = ui_elements
+                cell_info["text_importance"] = text_importance
+
+                # Add to the importance matrix
+                self.importance_matrix[y, x] = total_importance
+
+            end_time = timeit.default_timer()
+            print(
+                f"Time taken to generate importance grid: {end_time - start_time:.2f} seconds"
+            )
+
+            return self.grid_cells, self.cell_dimensions, self.importance_matrix
+
+        except Exception as e:
+            print(f"Error generating importance grid: {e}")
+
+            # Create a default grid as fallback
+            if self.grid_cells is None or self.cell_dimensions is None:
+                # Get screen dimensions
+                try:
+                    # Try to get screen dimensions from PIL
+                    import PIL.ImageGrab
+
+                    screen = PIL.ImageGrab.grab()
+                    width, height = screen.size
+                except:
+                    # Fallback dimensions
+                    width, height = 1920, 1080
+
+                # Calculate cell dimensions
+                cell_width = width // self.grid_x
+                cell_height = height // self.grid_y
+                self.cell_dimensions = (cell_width, cell_height)
+
+            # Create default importance matrix
+            self.importance_matrix = np.ones(
+                (self.grid_y, self.grid_x), dtype=np.float32
+            )
+
+            return [], self.cell_dimensions, self.importance_matrix
 
     def visualize_importance(self):
         """

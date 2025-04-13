@@ -14,16 +14,21 @@ class ScreenMagnifier(QWidget):
     exit_signal = Signal()
 
     def __init__(
-        self, coord_source: Optional[Callable[[], Tuple[float, float]]] = None
+        self,
+        coord_source: Optional[Callable[[], Tuple[float, float]]] = None,
+        scale_factor: float = 2.5,
+        zoom_increment: float = 0.1,
+        window_width: int = 600,
+        window_height: int = 400,
     ):
         super().__init__()
         self.coord_source = coord_source
-        self.scale_factor = 2.5  # Default scale factor
-        self.zoom_increment = 0.1  # Zoom increment for each step
+        self.scale_factor = scale_factor  # Default scale factor
+        self.zoom_increment = zoom_increment  # Zoom increment for each step
 
         # Set fixed dimensions for magnifier window
-        self.window_width = 300
-        self.window_height = 200
+        self.window_width = window_width
+        self.window_height = window_height
 
         # Calculate source region dimensions based on the scale factor
         self.update_source_dimensions()
@@ -74,8 +79,8 @@ class ScreenMagnifier(QWidget):
         # print(f"x: {mx}, y: {my}")
 
         # Position the window with offset to avoid capturing itself
-        window_x = mx + self.x_offset
-        window_y = my + self.y_offset
+        window_x = mx
+        window_y = my
 
         # Check if the magnifier window would go offscreen and adjust if needed
         screen = QApplication.primaryScreen()
@@ -84,9 +89,9 @@ class ScreenMagnifier(QWidget):
         screen_height = screen_geometry.height()
 
         if window_x + self.window_width > screen_width:
-            window_x = mx - self.window_width - self.x_offset
+            window_x = mx - self.window_width
         if window_y + self.window_height > screen_height:
-            window_y = my - self.window_height - self.y_offset
+            window_y = my - self.window_height
 
         # Move the window before taking the screenshot
         self.move(window_x, window_y)
@@ -149,11 +154,19 @@ class ScreenMagnifier(QWidget):
         self.exit_signal.emit()
 
 
-def run_zoom_window(coord_source: Optional[Callable[[], Tuple[float, float]]] = None):
+def run_zoom_window(
+    coord_source: Optional[Callable[[], Tuple[float, float]]] = None,
+    scale_factor: float = 2.5,
+    zoom_increment: float = 0.1,
+    window_width: int = 600,
+    window_height: int = 400,
+):
     import sys
 
     app = QApplication(sys.argv)
-    magnifier = ScreenMagnifier(coord_source)
+    magnifier = ScreenMagnifier(
+        coord_source, scale_factor, zoom_increment, window_width, window_height
+    )
     magnifier.show()
 
     # Connect the exit signal to the QApplication quit method
