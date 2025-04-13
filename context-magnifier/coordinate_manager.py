@@ -4,8 +4,8 @@ import threading
 import time
 import math
 import tkinter as tk  # For getting screen dimensions
-import pyautogui  # For getting mouse position
 import numpy as np
+from PySide6.QtGui import QCursor
 
 from facial_recognition.main import EyeTracker
 from ocr.main import ScreenAnalyzer
@@ -107,23 +107,6 @@ class CoordinateManager:
         self.continuous_update_interval = 5.0  # seconds
         self.continuous_update_thread = None
         self.continuous_update_stop_event = threading.Event()
-
-        # Initialize mouse tracking thread
-        self.mouse_thread_active = True
-        self.mouse_thread = threading.Thread(target=self._track_mouse)
-        self.mouse_thread.daemon = True
-        self.mouse_thread.start()
-
-    def _track_mouse(self):
-        """Thread function to continuously update mouse position"""
-        while self.mouse_thread_active:
-            try:
-                x, y = pyautogui.position()
-                self.mouse_x = x
-                self.mouse_y = y
-            except:
-                pass
-            time.sleep(0.05)  # 20 fps
 
     def setup_eye_tracking(self):
         """Set up eye tracking - either real or dummy"""
@@ -275,17 +258,10 @@ class CoordinateManager:
         return weighted_x_screen, weighted_y_screen
 
     def get_coordinates(self):
-        """Get the current coordinates to use for magnification"""
-        # Start with mouse coordinates
-        x, y = self.mouse_x, self.mouse_y
-
-        # If eye tracking is enabled, use that instead
-        if self.eye_tracking_enabled:
-            x, y = self.shared_eye_x.value, self.shared_eye_y.value
-
-        # If importance grid is enabled, find nearby important area
+        cursor_pos = QCursor.pos()
+        mouse_x, mouse_y = cursor_pos.x(), cursor_pos.y()
         if self.importance_grid_enabled:
-            x, y = self.find_important_area_near(x, y)
+            x, y = self.find_important_area_near(mouse_x, mouse_y)
 
         return x, y
 

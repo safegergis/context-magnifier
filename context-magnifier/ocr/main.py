@@ -657,7 +657,7 @@ class ScreenAnalyzer:
 
 def main():
     # Create a screen analyzer with specified grid dimensions
-    analyzer = ScreenAnalyzer(grid_x=7, grid_y=14)
+    analyzer = ScreenAnalyzer(grid_x=16, grid_y=9)
 
     # Capture the screen after a 5-second delay
     analyzer.capture_screen(wait_seconds=5)

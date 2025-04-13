@@ -30,6 +30,7 @@ class TransparentWindow(QMainWindow):
         self.settings_queue = settings_queue
 
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
+        self.setWindowState(Qt.WindowState.WindowFullScreen)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
         font_path = os.path.join(
