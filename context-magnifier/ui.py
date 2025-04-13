@@ -13,6 +13,9 @@ from PySide6.QtGui import QFontDatabase, QFont
 class TransparentWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.settings_inputs = {}
+
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
 
@@ -134,6 +137,9 @@ class TransparentWindow(QMainWindow):
             label_layout.addWidget(input, stretch=1)
 
             scroll_content.layout().addWidget(label_widget)    
+
+            # Save the input field using the label_text as key
+            self.settings_inputs[label_text] = input
 
         SettingWidget("grid y")
         SettingWidget("base size")
