@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import time
 import tkinter as tk
-from GazeTracking.gaze_tracking import GazeTracking
+from facial_recognition.GazeTracking.gaze_tracking import GazeTracking
 
 
 class EyeTracker:
