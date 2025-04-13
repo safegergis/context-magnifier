@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QTimer, Qt, Signal, QPoint, QRect
 from PySide6.QtGui import QImage, QPixmap, QIcon, QScreen, QCursor, QAction
-from typing import Callable, Optional, Tuple
+from typing import Callable, Tuple
 
 
 class ScreenMagnifier(QWidget):
@@ -15,7 +15,7 @@ class ScreenMagnifier(QWidget):
 
     def __init__(
         self,
-        coord_source: Optional[Callable[[], Tuple[float, float]]] = None,
+        coord_source: Callable[[], Tuple[int, int]] | None = None,
         scale_factor: float = 2.5,
         zoom_increment: float = 0.1,
         window_width: int = 600,
@@ -155,7 +155,7 @@ class ScreenMagnifier(QWidget):
 
 
 def run_zoom_window(
-    coord_source: Optional[Callable[[], Tuple[float, float]]] = None,
+    coord_source: Callable[[], Tuple[int, int]] | None = None,
     scale_factor: float = 2.5,
     zoom_increment: float = 0.1,
     window_width: int = 600,
