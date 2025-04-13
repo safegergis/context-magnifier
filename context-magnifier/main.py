@@ -1,5 +1,5 @@
-import app.core as app
+from app.main_window import run_main_window
 
 
-app.run()
-
+if __name__ == "__main__":
+    run_main_window()
