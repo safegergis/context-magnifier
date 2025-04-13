@@ -1,5 +1,5 @@
 import sys
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QRect, QPoint, QSize
 from PySide6.QtWidgets import (
     QApplication,
     QLabel,
@@ -7,8 +7,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget
 )
+from PySide6.QtGui import QPainter, QScreen, QCursor, QColor, QPixmap
 
-class MyWidget(QWidget):
+class MagnifierWidget(QWidget):
     def __init__(self):
         super().__init__()
 
@@ -22,21 +23,56 @@ class MyWidget(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        # Add some content (optional)
-        label = QLabel("Transparent Fullscreen Window")
-        label.setStyleSheet("color: white; font-size: 24px;")
-        layout.addWidget(label)
-
         # Add a close button
         close_button = QPushButton("Close")
         close_button.clicked.connect(self.close)
         layout.addWidget(close_button)
 
-        # Show fullscreen
+
+        self.magnifier_active = False
+        self.magnification_factor = 2.0
+        self.magnification_size = 200
+        self.magnifier_position = QPoint(0, 0)
+
+        self.setMouseTracking(True)
         self.showFullScreen()
+
+    def paintEvent(self, event):
+        super().painEvent(event)
+
+        if not self.magnifier_active:
+            return
+
+        painter = QPainter(self)
+
+        screen = QApplication.primaryScreen()
+        pixmap = screen.grabWindow(0)
+
+        half_size = self.magnifier_size // 2
+        half_scaled = int(half_size / self.magnification_factor)
+
+        source_rect = QRect(
+            self.magnifier_position.x() - half_scaled,
+            self.magnifier_position.y() - half_scaled,
+            half_scaled * 2,
+            half_scaled * 2
+        )
+
+        target_rect = QRect(
+            self.magnifier_position.x() - half_size,
+            self.magnifier_position.y() - half_size,
+            self.magnifier_size,
+            self.magnifier_size
+        )
+
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        painter.drawPixmap(target_rect, pixmap, source_rect)
+
+        painter.setPen(QColor(255, 255, 255, 180))
+        painter.drawEllipse(target_rect)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    widget = MyWidget()
+    widget = MagnifierWidget()
     widget.show()
     sys.exit(app.exec())
