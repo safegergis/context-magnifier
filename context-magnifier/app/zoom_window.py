@@ -12,6 +12,8 @@ from typing import Callable, Tuple
 
 class ScreenMagnifier(QWidget):
     exit_signal = Signal()
+    toggle_eye_tracking_signal = Signal(bool)
+    toggle_importance_map_signal = Signal(bool)
 
     def __init__(
         self,
@@ -30,6 +32,10 @@ class ScreenMagnifier(QWidget):
         self.window_width = window_width
         self.window_height = window_height
 
+        # Feature toggle states
+        self.eye_tracking_enabled = False
+        self.importance_map_enabled = True
+
         # Calculate source region dimensions based on the scale factor
         self.update_source_dimensions()
 
@@ -47,6 +53,10 @@ class ScreenMagnifier(QWidget):
         self.label = QLabel(self)
         self.label.setFixedSize(self.window_width, self.window_height)
 
+        # Setup context menu
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_context_menu)
+
         # Create an offset to prevent the window from covering what we're trying to magnify
         self.x_offset = 20
         self.y_offset = 20
@@ -58,6 +68,57 @@ class ScreenMagnifier(QWidget):
             self.timer.start(30)  # Update every 30 milliseconds
         except Exception as e:
             print(f"Error connecting timer: {e}")
+
+    def show_context_menu(self, position):
+        """Show the context menu with options to toggle features"""
+        menu = QMenu(self)
+
+        # Eye tracking toggle
+        eye_tracking_action = QAction("Eye Tracking", self, checkable=True)
+        eye_tracking_action.setChecked(self.eye_tracking_enabled)
+        eye_tracking_action.triggered.connect(self.toggle_eye_tracking)
+        menu.addAction(eye_tracking_action)
+
+        # Importance map toggle
+        importance_map_action = QAction("Use Importance Map", self, checkable=True)
+        importance_map_action.setChecked(self.importance_map_enabled)
+        importance_map_action.triggered.connect(self.toggle_importance_map)
+        menu.addAction(importance_map_action)
+
+        # Separator
+        menu.addSeparator()
+
+        # Zoom controls
+        zoom_in_action = QAction("Zoom In", self)
+        zoom_in_action.triggered.connect(self.zoom_in)
+        menu.addAction(zoom_in_action)
+
+        zoom_out_action = QAction("Zoom Out", self)
+        zoom_out_action.triggered.connect(self.zoom_out)
+        menu.addAction(zoom_out_action)
+
+        # Separator
+        menu.addSeparator()
+
+        # Exit action
+        exit_action = QAction("Exit", self)
+        exit_action.triggered.connect(self.close)
+        menu.addAction(exit_action)
+
+        # Show the menu
+        menu.exec(self.mapToGlobal(position))
+
+    def toggle_eye_tracking(self, checked):
+        """Toggle eye tracking on/off"""
+        self.eye_tracking_enabled = checked
+        self.toggle_eye_tracking_signal.emit(checked)
+        print(f"Eye tracking {'enabled' if checked else 'disabled'}")
+
+    def toggle_importance_map(self, checked):
+        """Toggle importance map on/off"""
+        self.importance_map_enabled = checked
+        self.toggle_importance_map_signal.emit(checked)
+        print(f"Importance map {'enabled' if checked else 'disabled'}")
 
     def update_source_dimensions(self):
         """Update source region dimensions based on scale factor"""
