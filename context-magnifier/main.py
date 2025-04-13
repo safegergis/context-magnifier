@@ -77,7 +77,24 @@ def apply_settings(settings, coord_manager):
         return False
 
 
-def run_zoom_window_app(coord_manager, settings_queue):
+def process_command(command, coord_manager):
+    """Process a command from the command queue"""
+    try:
+        print(f"Processing command: {command}")
+
+        if command.get("command") == "enable_eye_tracking":
+            calibration_file = command.get("file")
+            if calibration_file:
+                # Load calibration and enable eye tracking
+                return coord_manager.load_calibration_and_track(calibration_file)
+
+        return False
+    except Exception as e:
+        print(f"Error processing command: {e}")
+        return False
+
+
+def run_zoom_window_app(coord_manager, settings_queue, command_queue):
     """Run the zoom window application with the given coordinate manager"""
     app = QApplication(sys.argv)
 
@@ -87,6 +104,7 @@ def run_zoom_window_app(coord_manager, settings_queue):
         zoom_increment=0.1,
         window_width=1000,
         window_height=562,
+        follow_mouse=True,  # Enable follow_mouse by default
     )
 
     # Connect signals for feature toggling
@@ -113,22 +131,40 @@ def run_zoom_window_app(coord_manager, settings_queue):
     if coord_manager.importance_grid_enabled:
         magnifier.importance_map_enabled = True
 
-    # Start a worker thread to process settings queue
-    def settings_worker():
+    # Start a worker thread to process queues
+    def queue_worker():
         while True:
             try:
-                settings = settings_queue.get()
-                if settings:
-                    apply_settings(settings, coord_manager)
+                # Check for settings
+                try:
+                    settings = settings_queue.get(block=False)
+                    if settings:
+                        apply_settings(settings, coord_manager)
+                except:
+                    pass
+
+                # Check for commands
+                try:
+                    command = command_queue.get(block=False)
+                    if command:
+                        process_command(command, coord_manager)
+                except:
+                    pass
+
+                # Sleep to avoid high CPU usage
+                import time
+
+                time.sleep(0.1)
+
             except:
                 # Queue might be closed if process is shutting down
                 break
 
     import threading
 
-    settings_thread = threading.Thread(target=settings_worker)
-    settings_thread.daemon = True
-    settings_thread.start()
+    queue_thread = threading.Thread(target=queue_worker)
+    queue_thread.daemon = True
+    queue_thread.start()
 
     magnifier.show()
 
@@ -144,8 +180,9 @@ if __name__ == "__main__":
     USE_EYE_TRACKING = False  # Set to True to enable eye tracking
     USE_IMPORTANCE_MAP = True  # Set to True to use importance map for zoom targeting
 
-    # Create the settings queue for communication between processes
+    # Create queues for communication between processes
     settings_queue = multiprocessing.Queue()
+    command_queue = multiprocessing.Queue()
 
     # Create the coordinate manager
     coord_manager = CoordinateManager(
@@ -155,20 +192,20 @@ if __name__ == "__main__":
     )
 
     # Set up components
-    if USE_EYE_TRACKING:
-        coord_manager.setup_eye_tracking()
-
     if USE_IMPORTANCE_MAP:
         coord_manager.setup_importance_grid()
 
     # Start the application
-    p1 = multiprocessing.Process(target=run_main_window, args=(settings_queue,))
+    p1 = multiprocessing.Process(
+        target=run_main_window, args=(settings_queue, command_queue)
+    )
     p1.start()
 
     try:
-        run_zoom_window_app(coord_manager, settings_queue)
+        run_zoom_window_app(coord_manager, settings_queue, command_queue)
     finally:
         # Cleanup
         coord_manager.cleanup()
         settings_queue.close()
+        command_queue.close()
         p1.join()

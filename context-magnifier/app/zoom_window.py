@@ -25,11 +25,13 @@ class ScreenMagnifier(QWidget):
         zoom_increment: float = 0.1,
         window_width: int = 600,
         window_height: int = 400,
+        follow_mouse: bool = False,
     ):
         super().__init__()
         self.coord_source = coord_source
         self.scale_factor = scale_factor  # Default scale factor
         self.zoom_increment = zoom_increment  # Zoom increment for each step
+        self.follow_mouse = follow_mouse  # Whether to position window at mouse cursor
 
         # Set fixed dimensions for magnifier window
         self.window_width = window_width
@@ -117,6 +119,12 @@ class ScreenMagnifier(QWidget):
 
             menu.addMenu(interval_menu)
 
+        # Follow mouse toggle
+        follow_mouse_action = QAction("Follow Mouse", self, checkable=True)
+        follow_mouse_action.setChecked(self.follow_mouse)
+        follow_mouse_action.triggered.connect(self.toggle_follow_mouse)
+        menu.addAction(follow_mouse_action)
+
         # Separator
         menu.addSeparator()
 
@@ -139,6 +147,11 @@ class ScreenMagnifier(QWidget):
 
         # Show the menu
         menu.exec(self.mapToGlobal(position))
+
+    def toggle_follow_mouse(self, checked):
+        """Toggle whether window follows mouse position"""
+        self.follow_mouse = checked
+        print(f"Follow mouse {'enabled' if checked else 'disabled'}")
 
     def toggle_eye_tracking(self, checked):
         """Toggle eye tracking on/off"""
@@ -179,22 +192,30 @@ class ScreenMagnifier(QWidget):
         self.source_height = int(self.window_height / self.scale_factor)
 
     def update_magnifier(self):
-        """Method for updating the window to follow cursor"""
-        if not self.coord_source:
-            # Get the mouse position using Qt
-            try:
-                cursor_pos = QCursor.pos()
-                mx, my = cursor_pos.x(), cursor_pos.y()
-            except Exception as e:
-                print(f"Error getting cursor position: {e}")
-                mx, my = 0, 0
-        else:
-            mx, my = self.coord_source()
-        # print(f"x: {mx}, y: {my}")
+        """Method for updating the window to follow cursor and magnify content at specified coordinates"""
+        # Get the mouse position for window positioning
+        try:
+            cursor_pos = QCursor.pos()
+            mouse_x, mouse_y = cursor_pos.x(), cursor_pos.y()
+        except Exception as e:
+            print(f"Error getting cursor position: {e}")
+            mouse_x, mouse_y = 0, 0
 
-        # Position the window with offset to avoid capturing itself
-        window_x = mx
-        window_y = my
+        # Get coordinates for content to magnify
+        if not self.coord_source:
+            # If no coord_source, use mouse position for content as well
+            content_x, content_y = mouse_x, mouse_y
+        else:
+            # Use coordinate manager's coordinates for the content
+            content_x, content_y = self.coord_source()
+
+        # Determine window position
+        if self.follow_mouse:
+            window_x = mouse_x
+            window_y = mouse_y
+        else:
+            window_x = content_x
+            window_y = content_y
 
         # Check if the magnifier window would go offscreen and adjust if needed
         screen = QApplication.primaryScreen()
@@ -202,10 +223,17 @@ class ScreenMagnifier(QWidget):
         screen_width = screen_geometry.width()
         screen_height = screen_geometry.height()
 
+        # Prevent window from going off the right or left sides
         if window_x + self.window_width > screen_width:
-            window_x = mx - self.window_width
+            window_x = window_x - self.window_width
+        if window_x < 0:
+            window_x = 0
+
+        # Prevent window from going off the bottom or top sides
         if window_y + self.window_height > screen_height:
-            window_y = my - self.window_height
+            window_y = window_y - self.window_height
+        if window_y < 0:
+            window_y = 0
 
         # Move the window before taking the screenshot
         self.move(window_x, window_y)
@@ -213,12 +241,12 @@ class ScreenMagnifier(QWidget):
         # Give the window time to move before capturing
         QApplication.processEvents()
 
-        # Calculate the region to capture centered on cursor
+        # Calculate the region to capture centered on content coordinates
         half_source_width = self.source_width // 2
         half_source_height = self.source_height // 2
 
-        magnify_x1 = max(0, mx - half_source_width)
-        magnify_y1 = max(0, my - half_source_height)
+        magnify_x1 = max(0, content_x - half_source_width)
+        magnify_y1 = max(0, content_y - half_source_height)
 
         # Capture the screen using Qt
         screen = QApplication.primaryScreen()
@@ -270,6 +298,10 @@ class ScreenMagnifier(QWidget):
                 if self.importance_map_enabled:
                     self.toggle_continuous_updates(not self.continuous_updates_enabled)
 
+            # toggle follow mouse (ctrl + f)
+            elif event.key() == Qt.Key.Key_F:
+                self.toggle_follow_mouse(not self.follow_mouse)
+
         # hide magnifier (Esc)
         elif event.key() == Qt.Key.Key_Escape:
             self.hide()
@@ -284,12 +316,18 @@ def run_zoom_window(
     zoom_increment: float = 0.1,
     window_width: int = 600,
     window_height: int = 400,
+    follow_mouse: bool = False,
 ):
     import sys
 
     app = QApplication(sys.argv)
     magnifier = ScreenMagnifier(
-        coord_source, scale_factor, zoom_increment, window_width, window_height
+        coord_source,
+        scale_factor,
+        zoom_increment,
+        window_width,
+        window_height,
+        follow_mouse,
     )
     magnifier.show()
 

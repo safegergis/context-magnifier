@@ -1,0 +1,190 @@
+{
+  "calibrated_points": {
+    "center": {
+      "left_pupil": [
+        852.8,
+        755.6
+      ],
+      "right_pupil": [
+        1102.3,
+        762.0
+      ]
+    },
+    "left": {
+      "left_pupil": [
+        891.1,
+        765.6
+      ],
+      "right_pupil": [
+        1139.8,
+        775.9
+      ]
+    },
+    "right": {
+      "left_pupil": [
+        831.5,
+        777.1
+      ],
+      "right_pupil": [
+        1080.6,
+        786.2
+      ]
+    },
+    "top": {
+      "left_pupil": [
+        870.6,
+        729.7
+      ],
+      "right_pupil": [
+        1115.6,
+        738.6
+      ]
+    },
+    "bottom": {
+      "left_pupil": [
+        875.6,
+        819.2
+      ],
+      "right_pupil": [
+        1116.9,
+        826.6
+      ]
+    },
+    "top_left": {
+      "left_pupil": [
+        922.4,
+        764.2
+      ],
+      "right_pupil": [
+        1162.0,
+        762.9
+      ]
+    },
+    "top_right": {
+      "left_pupil": [
+        802.7,
+        741.7
+      ],
+      "right_pupil": [
+        1037.8,
+        756.6
+      ]
+    },
+    "bottom_left": {
+      "left_pupil": [
+        911.5,
+        773.0
+      ],
+      "right_pupil": [
+        1146.8,
+        785.7
+      ]
+    },
+    "bottom_right": {
+      "left_pupil": [
+        825.0,
+        803.9
+      ],
+      "right_pupil": [
+        1070.7,
+        820.7
+      ]
+    },
+    "mid_left": {
+      "left_pupil": [
+        900.5,
+        792.6
+      ],
+      "right_pupil": [
+        1152.1,
+        801.5
+      ]
+    },
+    "mid_right": {
+      "left_pupil": [
+        853.0,
+        792.9
+      ],
+      "right_pupil": [
+        1098.4,
+        803.8
+      ]
+    },
+    "mid_top": {
+      "left_pupil": [
+        869.4,
+        740.5
+      ],
+      "right_pupil": [
+        1110.8,
+        749.6
+      ]
+    },
+    "mid_bottom": {
+      "left_pupil": [
+        870.6,
+        782.2
+      ],
+      "right_pupil": [
+        1106.4,
+        790.9
+      ]
+    }
+  },
+  "calibration_screen_points": {
+    "center": [
+      756,
+      491
+    ],
+    "left": [
+      50,
+      491
+    ],
+    "right": [
+      1462,
+      491
+    ],
+    "top": [
+      756,
+      50
+    ],
+    "bottom": [
+      756,
+      932
+    ],
+    "top_left": [
+      50,
+      50
+    ],
+    "top_right": [
+      1462,
+      50
+    ],
+    "bottom_left": [
+      50,
+      932
+    ],
+    "bottom_right": [
+      1462,
+      932
+    ],
+    "mid_left": [
+      378,
+      491
+    ],
+    "mid_right": [
+      1134,
+      491
+    ],
+    "mid_top": [
+      756,
+      245
+    ],
+    "mid_bottom": [
+      756,
+      737
+    ]
+  },
+  "screen_width": 1512,
+  "screen_height": 982
+}

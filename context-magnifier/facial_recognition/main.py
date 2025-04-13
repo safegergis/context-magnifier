@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import time
 import tkinter as tk
-from facial_recognition.GazeTracking.gaze_tracking import GazeTracking
+from .GazeTracking.gaze_tracking import GazeTracking
 
 
 class EyeTracker:
@@ -14,6 +14,7 @@ class EyeTracker:
         screen_width=None,
         screen_height=None,
         calibration_screen_points=None,
+        callibrated_points=None,
     ):
         """
         Initialize the eye tracker.
@@ -35,21 +36,24 @@ class EyeTracker:
         self.screen_height = screen_height
 
         # Initialize calibration data dictionary
-        self.calibrated_points = {
-            "center": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "left": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "right": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "top": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "bottom": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "top_left": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "top_right": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "bottom_left": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "bottom_right": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "mid_left": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "mid_right": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "mid_top": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-            "mid_bottom": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
-        }
+        if callibrated_points is None:
+            self.calibrated_points = {
+                "center": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "left": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "right": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "top": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "bottom": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "top_left": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "top_right": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "bottom_left": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "bottom_right": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "mid_left": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "mid_right": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "mid_top": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+                "mid_bottom": {"left_pupil": (0, 0), "right_pupil": (0, 0)},
+            }
+        else:
+            self.calibrated_points = callibrated_points
 
         # Set up calibration screen points if not provided
         if not calibration_screen_points:

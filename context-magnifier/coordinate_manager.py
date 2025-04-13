@@ -6,6 +6,8 @@ import math
 import tkinter as tk  # For getting screen dimensions
 import numpy as np
 from PySide6.QtGui import QCursor
+import json
+import os
 
 from facial_recognition.main import EyeTracker
 from ocr.main import ScreenAnalyzer
@@ -108,8 +110,89 @@ class CoordinateManager:
         self.continuous_update_thread = None
         self.continuous_update_stop_event = threading.Event()
 
+        # Calibration file
+        self.calibration_file = None
+
+    def load_calibration_and_track(self, calibration_file):
+        """
+        Load calibration data from a file and start eye tracking
+
+        Args:
+            calibration_file: Path to the calibration data JSON file
+
+        Returns:
+            True if successfully loaded and started tracking, False otherwise
+        """
+        try:
+            # Stop any existing tracking first
+            if self.eye_tracking_enabled:
+                self.toggle_eye_tracking(False)
+
+            # Check if file exists
+            if not os.path.exists(calibration_file):
+                print(f"Calibration file not found: {calibration_file}")
+                return False
+
+            # Load calibration data
+            with open(calibration_file, "r") as f:
+                cal_data = json.load(f)
+
+            # Validate calibration data
+            required_keys = [
+                "calibrated_points",
+                "calibration_screen_points",
+                "screen_width",
+                "screen_height",
+            ]
+            if not all(key in cal_data for key in required_keys):
+                print(f"Invalid calibration data in {calibration_file}")
+                return False
+
+            # Save calibration file path
+            self.calibration_file = calibration_file
+
+            # Create eye tracker with calibration data
+            self.eye_tracker = EyeTracker(
+                callibrated_points=cal_data["calibrated_points"],
+                screen_width=cal_data["screen_width"],
+                screen_height=cal_data["screen_height"],
+                calibration_screen_points=cal_data["calibration_screen_points"],
+            )
+
+            # Set calibration status
+            self.eye_tracker.is_calibrated = True
+
+            # Enable eye tracking
+            self.eye_tracking_enabled = True
+
+            # Start tracking with eye tracker
+            def handle_gaze(coords):
+                x, y = coords
+                # Update shared memory values
+                self.shared_eye_x.value = float(x)
+                self.shared_eye_y.value = float(y)
+
+            self.tracking_thread = self.eye_tracker.start_tracking(
+                callback=handle_gaze, fps=10
+            )
+
+            print(f"Eye tracking started with calibration from {calibration_file}")
+            return True
+
+        except Exception as e:
+            print(f"Error loading calibration and starting tracking: {e}")
+            # Reset tracker state
+            self.eye_tracker = None
+            self.eye_tracking_enabled = False
+            return False
+
     def setup_eye_tracking(self):
         """Set up eye tracking - either real or dummy"""
+        # Check if we have a calibration file first
+        if self.calibration_file and os.path.exists(self.calibration_file):
+            return self.load_calibration_and_track(self.calibration_file)
+
+        # Otherwise use dummy or do live calibration
         if self.use_dummy_tracker:
             print("Using dummy eye tracker for debugging")
             self.stop_event, self.dummy_thread = create_dummy_eye_tracker(
@@ -147,6 +230,8 @@ class CoordinateManager:
                 self.stop_event.set()
             if self.eye_tracker:
                 self.eye_tracker.stop_tracking()
+                self.eye_tracker.stop_webcam()
+                self.eye_tracker = None
 
     def toggle_importance_map(self, enabled):
         """Toggle importance map use on/off"""
@@ -260,8 +345,17 @@ class CoordinateManager:
     def get_coordinates(self):
         cursor_pos = QCursor.pos()
         mouse_x, mouse_y = cursor_pos.x(), cursor_pos.y()
-        if self.importance_grid_enabled:
+
+        # Initialize x and y with mouse coordinates
+        x, y = mouse_x, mouse_y
+
+        # If importance grid is enabled, find important area
+        if self.importance_grid_enabled and self.importance_matrix is not None:
             x, y = self.find_important_area_near(mouse_x, mouse_y)
+
+        # If eye tracking is enabled, use eye coordinates
+        if self.eye_tracking_enabled:
+            x, y = self.shared_eye_x.value, self.shared_eye_y.value
 
         return x, y
 
@@ -336,6 +430,7 @@ class CoordinateManager:
                 self.dummy_thread.join(timeout=1.0)
             if self.eye_tracker:
                 self.eye_tracker.stop_tracking()
+                self.eye_tracker.stop_webcam()
 
         # Stop continuous updates
         self.stop_continuous_updates()
