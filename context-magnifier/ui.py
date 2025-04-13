@@ -138,8 +138,8 @@ class TransparentWindow(QMainWindow):
 
             scroll_content.layout().addWidget(label_widget)    
 
-            # Save the input field using the label_text as key
-            self.settings_inputs[label_text] = input
+            # Save the input field using the label as key
+            self.settings_inputs[label] = input
 
         SettingWidget("grid y")
         SettingWidget("base size")
