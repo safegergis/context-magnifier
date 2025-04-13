@@ -32,8 +32,8 @@ class ScreenMagnifier(QWidget):
         self.label.setFixedSize(self.window_width, self.window_height)
         
         # Create an offset to prevent the window from covering what we're trying to magnify
-        self.x_offset = 20
-        self.y_offset = 20
+        self.x_offset = 100
+        self.y_offset = 100
 
         # Start a timer to update the magnifier
         self.timer = QTimer(self)
@@ -49,11 +49,22 @@ class ScreenMagnifier(QWidget):
         """Method for updating the window to follow cursor"""
         # Get the mouse position
         mx, my = pyautogui.position()
+        screen_width, screen_height = pyautogui.size()
         
         # Position the window with offset to avoid capturing itself
         window_x = mx + self.x_offset
         window_y = my + self.y_offset
+
+        # Check if window would go off the right edge of screen
+        if window_x + self.window_width > screen_width:
+            # Position to the left of cursor instead
+            window_x = mx - self.window_width - self.x_offset
         
+        # Check if window would go off the bottom edge of screen
+        if window_y + self.window_height > screen_height:
+            # Position above cursor instead
+            window_y = my - self.window_height - self.y_offset
+
         # Move the window before taking the screenshot
         self.move(window_x, window_y)
         
@@ -77,7 +88,7 @@ class ScreenMagnifier(QWidget):
 
         # Convert the screenshot to a NumPy array
         frame = np.array(screen)
-        
+
         # Convert BGR to RGB (OpenCV uses BGR, but QImage expects RGB)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
@@ -87,6 +98,9 @@ class ScreenMagnifier(QWidget):
             (self.window_width, self.window_height), 
             interpolation=cv2.INTER_LANCZOS4
         )
+
+        # Convert back to RGB for Qt
+        magnified_frame = cv2.cvtColor(magnified_frame, cv2.COLOR_BGR2RGB)
 
         # Convert the magnified frame to QImage and display it
         height, width, channel = magnified_frame.shape
