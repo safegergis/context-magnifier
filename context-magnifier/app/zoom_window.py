@@ -137,9 +137,9 @@ class ScreenMagnifier(QWidget):
         qImg = qImg.convertToFormat(QImage.Format.Format_RGB888)
         width = qImg.width()
         height = qImg.height()
-        ptr = qImg.constBits()
-        ptr.setsize(height * width * 3)
-        frame = np.array(ptr).reshape(height, width, 3)
+        
+        # Create numpy array directly from the QImage
+        frame = np.array(qImg.bits().asarray(height * width * 3), dtype=np.uint8).reshape(height, width, 3)
 
         # Convert BGR to RGB (OpenCV uses BGR, but QImage expects RGB)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
