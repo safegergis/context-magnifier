@@ -24,6 +24,11 @@ class ScreenAnalyzer:
         button_importance=3.0,
         input_field_importance=2.0,
         checkbox_importance=1.0,
+        confirmation_text_importance=3.0,
+        error_importance=2.5,
+        title_importance=1.5,
+        length_importance=1.5,
+        density_importance=0.2,
     ):
         """
         Initialize the ScreenAnalyzer with specified grid dimensions.
@@ -38,6 +43,11 @@ class ScreenAnalyzer:
             button_importance: Importance score for buttons
             input_field_importance: Importance score for input fields
             checkbox_importance: Importance score for checkboxes
+            confirmation_text_importance: Importance score for confirmation (ok, submit, accept) text
+            error_importance: Importance score for error text
+            title_importance: Importance score for title text
+            length_importance: Importance score for length of text
+            density_importance: Importance score for density of text
         """
         self.grid_x = grid_x
         self.grid_y = grid_y
@@ -52,6 +62,11 @@ class ScreenAnalyzer:
         self.input_field_importance = input_field_importance
         self.checkbox_importance = checkbox_importance
         self.confidence_threshold = confidence_threshold
+        self.confirmation_text_importance = confirmation_text_importance
+        self.error_importance = error_importance
+        self.title_importance = title_importance
+        self.length_importance = length_importance
+        self.density_importance = density_importance
 
     def capture_screen(self, wait_seconds=0):
         """
@@ -219,25 +234,25 @@ class ScreenAnalyzer:
                 # Text content factor (titles, buttons, etc. are important)
                 content_factor = 1.0
                 if text.lower() in ["error", "warning", "alert", "caution"]:
-                    content_factor = 2.5
+                    content_factor = self.error_importance
                 elif any(
                     btn in text.lower() for btn in ["ok", "cancel", "submit", "save"]
                 ):
-                    content_factor = 2.0
+                    content_factor = self.confirmation_text_importance
                 elif text[0].isupper() and len(text) > 3:  # Possible title or heading
-                    content_factor = 1.5
+                    content_factor = self.title_importance
 
                 # Consider text length - shorter texts might be more important (like labels, numbers)
                 length_factor = 1.0
                 if len(text.strip()) <= 5:
-                    length_factor = 1.5  # Short labels/values are often important
+                    length_factor = self.length_importance
 
                 # Calculate final score for this text element
                 text_score = size_factor * content_factor * length_factor
 
                 # Add some importance score for density (multiple small text items are important)
                 # This will make areas with many small text elements score higher
-                density_factor = 0.2
+                density_factor = self.density_importance
                 importance_score += text_score + density_factor
 
         return importance_score

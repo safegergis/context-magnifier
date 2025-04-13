@@ -1,0 +1,3 @@
+[submodule "context-magnifier/GazeTracking"]
+	path = context-magnifier/GazeTracking
+	url = https://github.com/antoinelame/GazeTracking.git
