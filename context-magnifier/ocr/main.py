@@ -20,7 +20,7 @@ class ScreenAnalyzer:
         base_size=20,
         max_size_factor=4.0,
         min_size_factor=1.0,
-        confidence_threshold=20,
+        confidence_threshold=25,
         button_importance=3.0,
         input_field_importance=2.0,
         checkbox_importance=1.0,
@@ -29,6 +29,7 @@ class ScreenAnalyzer:
         title_importance=1.5,
         length_importance=1.5,
         density_importance=0.2,
+        wait_seconds=2,
     ):
         """
         Initialize the ScreenAnalyzer with specified grid dimensions.
@@ -49,6 +50,7 @@ class ScreenAnalyzer:
             length_importance: Importance score for length of text
             density_importance: Importance score for density of text
         """
+        self.wait_seconds = wait_seconds
         self.grid_x = grid_x
         self.grid_y = grid_y
         self.screenshot = None
@@ -68,7 +70,7 @@ class ScreenAnalyzer:
         self.length_importance = length_importance
         self.density_importance = density_importance
 
-    def capture_screen(self, wait_seconds=0):
+    def capture_screen(self):
         """
         Capture the screen after an optional delay.
 
@@ -78,8 +80,8 @@ class ScreenAnalyzer:
         Returns:
             screenshot: numpy array of the screenshot or None if failed
         """
-        if wait_seconds > 0:
-            time.sleep(wait_seconds)
+        if self.wait_seconds > 0:
+            time.sleep(self.wait_seconds)
 
         try:
             # Take a screenshot
@@ -657,7 +659,7 @@ class ScreenAnalyzer:
 
 def main():
     # Create a screen analyzer with specified grid dimensions
-    analyzer = ScreenAnalyzer(grid_x=16, grid_y=9)
+    analyzer = ScreenAnalyzer(grid_x=9, grid_y=16)
 
     # Capture the screen after a 5-second delay
     analyzer.capture_screen(wait_seconds=5)
